@@ -57,12 +57,19 @@ function puleaf_admin_scripts()
   wp_register_script('puleaf', plugins_url('/js/admin.js', __FILE__), array('jquery'),'1.1', true);
   wp_enqueue_script('puleaf');
 
-  global $post;
-  if(!$puleafletmapdata =  unserialize(get_post_meta($post->ID, '_puleafletmap', true))) {
-    $puleafletmapdata = array(40.3461,-74.65304,5,0);
-  }
+  
+  $screen = get_current_screen();
+
+if( $screen->post_type == 'page' || $screen->post_type == 'post'){
+    global $post;
+    if(!$puleafletmapdata =  unserialize(get_post_meta($post->ID, '_puleafletmap', true))) {
+      $puleafletmapdata = array(40.3461,-74.65304,5,0);
+    }
     $d = array('plugin_url' => plugin_dir_url( __FILE__ ), 'coordinates' => $puleafletmapdata);
     wp_localize_script( 'puleaf', 'vars', $d);
+  }
+
+
 }
 add_action( 'admin_enqueue_scripts', 'puleaf_admin_scripts' ); 
 
