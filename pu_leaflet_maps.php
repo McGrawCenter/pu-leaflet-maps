@@ -57,21 +57,38 @@ function puleaf_admin_scripts()
   wp_register_script('puleaf', plugins_url('/js/admin.js', __FILE__), array('jquery'),'1.1', true);
   wp_enqueue_script('puleaf');
 
-  
   $screen = get_current_screen();
 
-if( $screen->post_type == 'page' || $screen->post_type == 'post'){
+  if( $screen->post_type == 'page' || $screen->post_type == 'post'){
+
     global $post;
-    if(!$puleafletmapdata =  unserialize(get_post_meta($post->ID, '_puleafletmap', true))) {
-      $puleafletmapdata = array(40.3461,-74.65304,5,0);
+
+    if(!$puleafletmapdata =  json_decode(get_post_meta($post->ID, '_puleafletmap', true))) {
+      $puleafletmapdata = defaultMapObj();
     }
-    $d = array('plugin_url' => plugin_dir_url( __FILE__ ), 'coordinates' => $puleafletmapdata);
+    $d = array('plugin_url' => plugin_dir_url( __FILE__ ), 'mapdata' => $puleafletmapdata);
     wp_localize_script( 'puleaf', 'vars', $d);
   }
-
-
 }
 add_action( 'admin_enqueue_scripts', 'puleaf_admin_scripts' ); 
+
+
+
+
+
+/************************************
+* Initial, default map object
+************************************/
+function defaultMapObj() {
+  $data = array(
+  "lat" => 40.3461,
+  "lng" => -74.65304,
+  "zoom" => 5,
+  "title" => '');
+  return $data;
+}
+
+
 
 
 
@@ -91,17 +108,40 @@ add_action( 'add_meta_boxes', 'puleaf_meta_boxes' );
 * Callback generating the html of the metabox
 ************************************/
 function puleaf_map_editor_metabox() {
+
 global $post;
-$data = unserialize(get_post_meta($post->ID, '_puleafletmap', true));
+
+
+if($data = get_post_meta($post->ID, '_puleafletmap', true)) {
+  $data = json_decode($data);
+}
+else {
+  $data = new StdClass();
+  $data->lat = "40.3461";
+  $data->lng = "-74.65304";
+  $data->zoom = 5;
+  $data->savezoom = 0;
+  $data->title = "";
+}
+
 ?>
    <div id="MapLocation" style='width:100%; height:350px;background:grey;'></div>
-   Latitude: <input class='coordinates' id="Latitude" placeholder="Latitude" name="Location.Latitude" value='<?php echo $data[0]; ?>'  />
-   Longitude: <input class='coordinates' id="Longitude" placeholder="Longitude" name="Location.Longitude" value='<?php echo $data[1]; ?>'  />
+   <div id="PU-Leaflet-WP-Form">
+      <label for="Latitude">Latitude:</label><input type="text" class='coordinates' id="Latitude" placeholder="Latitude" name="Location.Latitude" value='<?php echo $data->lat; ?>'  />
+      <label for="Longitude">Longitude:</label><input type="text" class='coordinates' id="Longitude" placeholder="Longitude" name="Location.Longitude" value='<?php echo $data->lng; ?>'  /><br />
 <?php
-  if($data[3]) { $checked = "checked='checked'"; } else { $checked = ""; }
+  if($data->savezoom) { $checked = "checked='checked'"; } else { $checked = ""; }
 ?>
-   <input type='checkbox' name='Location.CustomZoom' id='zoomcheckbox' value='1' <?php echo $checked; ?>/> Save zoom level <input type='text' id="Zoom" name='Location.ZoomLevel' value='<?php echo $data[2]; ?>' />
-   <input type='button' class='puleaf-button' value='Center Map' style='float:right;'/>
+   
+
+   <input type='hidden' id="Zoom" name='Location.ZoomLevel' value='<?php echo $data->zoom; ?>' />
+    <label for="markertitle">Marker title (optional):</label><input type='text' id="markertitle" name='Location.Title' value='<?php echo $data->title; ?>' /> 
+   <input type='button' class='puleaf-clear' value='Clear Location'/> 
+   <input type='button' class='puleaf-center' value='Center Map'/>
+
+   <!--<input type='checkbox' name='Location.CustomZoom' id='zoomcheckbox' value='1' <?php echo $checked; ?>/> Save zoom level--> 
+
+   </div>
 <?php
 }
 
@@ -117,11 +157,17 @@ function puleaf_save_postdata($post_id)
   if($_POST) {
     $post_id = $_POST['ID'];
     if ( array_key_exists('Location_Latitude', $_POST) && array_key_exists('Location_Longitude', $_POST) ) {
-	if($_POST['Location_Latitude'] != "" || $_POST['Location_Longitude'] != "") {
-	  $puleaf_info = array($_POST['Location_Latitude'], $_POST['Location_Longitude'], $_POST['Location_ZoomLevel'], $_POST['Location_CustomZoom']);
-          update_post_meta( $post_id, '_puleafletmap', serialize($puleaf_info) );
+    
+        $puleaf_info = array(
+        	"lat"=>$_POST['Location_Latitude'],
+        	"lng"=>$_POST['Location_Longitude'],
+        	"zoom"=>$_POST['Location_ZoomLevel'],
+        	"savezoom"=>$_POST['Location_CustomZoom'],
+        	"title"=>$_POST['Location_Title']
+        );
 
-	}
+        update_post_meta( $post_id, '_puleafletmap', json_encode($puleaf_info) );
+
     }
   }
 }
@@ -129,18 +175,24 @@ function puleaf_save_postdata($post_id)
 add_action('save_post', 'puleaf_save_postdata');
 
 
+
+
+
+
 /************************************
 * Show map on post
 ************************************/
 function puleaf_content_filter($content) {
+
   global $post;
   $digits = 5;
   $rand = rand(pow(10, $digits-1), pow(10, $digits)-1);
+  
 
-  if ($info = unserialize(get_post_meta($post->ID,'_puleafletmap', true))) {
-
+  if ($data = json_decode(get_post_meta($post->ID,'_puleafletmap', true))) {
+    
     $html = "<div id='{$rand}map' style='width:100%; height:350px;background:grey;margin:20px 0px'></div>";
-    $html .= "<script>jQuery( document ).ready(function() { var coordinates = [{$info[0]},$info[1]];doLeaflet('{$rand}map',coordinates,'{$info[2]}'); });</script>";
+    $html .= "<script>jQuery( document ).ready(function() { var coordinates = [{$data->lat},{$data->lng}];doLeaflet('{$rand}map',coordinates,'{$data->zoom}','{$data->title}'); });</script>";
 
     return $html.$content;
   }
