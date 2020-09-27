@@ -1,6 +1,6 @@
 jQuery( document ).ready(function() {
 
-
+/*
 
   jQuery(".puleaf-center").click(function(event){
     var latLngs = [ marker.getLatLng() ];
@@ -26,21 +26,110 @@ jQuery( document ).ready(function() {
     var home_coords = [40.346086213021394,285.34687042236334 ];
     var zoom = 3;
   }
+  
+
 
   var map = L.map('MapLocation').setView(home_coords, zoom);
+    */
+    
+    
+  // tile layers
+  //http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}
+  //https://{s}.tile.osm.org/{z}/{x}/{y}.png
+  
 
-  L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+  
+  
+  
+  var home_coords = [39.952718, -75.164093 ];
+  var zoom = 13;
+  
+  var map = L.map('MapLocation').setView(home_coords, zoom);
+  L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   map.attributionControl.setPrefix(false);
+  
+  	/*
+       var geojsonFeature = {
+	    "type": "Feature",
+	    "properties": {
+		"name": "Coors Field",
+		"amenity": "Baseball Stadium",
+		"popupContent": "This is where the Rockies play!"
+	    },
+	    "geometry": {
+		"type": "Point",
+		"coordinates": [ -75.164093, 39.952718 ]
+	    }
+	};   
+	*/
+	var featureLayer = JSON.parse(vars.mapdata.geoJson);
+
+	var mylayer = L.geoJSON(featureLayer).addTo(map);
+	map.fitBounds(mylayer.getBounds());
+
+  
+     // FeatureGroup is to store editable layers
+     //var drawnItems = new L.FeatureGroup();
+     //map.addLayer(drawnItems);
+     
+     var drawControl = new L.Control.Draw({
+	 edit: {
+	     featureGroup: mylayer
+	 }
+     });
+     map.addControl(drawControl);
+     
+     
+
+  map.on('draw:created', function (e) {
+
+
+    var type = e.layerType,
+        layer = e.layer;
+
+    mylayer.addLayer(layer);
+    console.log(mylayer);
+    console.log(e);
+    
+    
+    var geojson = mylayer.toGeoJSON();
+    jQuery('#GeoJSON').val(JSON.stringify(geojson));
+
+    
+  });
+
+/*
+
+  map.on('draw:edited', function () {
+    // Update db to save latest changes.
+
+    jQuery('#featurelayer').val(toGeoJSON(drawnItems));
+    console.log(drawnItems);
+  });
+
+  map.on('draw:deleted', function () {
+    // Update db to save latest changes.
+    jQuery('#featurelayer').val(toGeoJSON(drawnItems));
+    console.log(drawnItems);
+  });
+  
+*/
+  
+  
+
+  
+  /*
 
   var marker = new L.marker(home_coords, {
     draggable: 'true'
   });
 
+  */
 
-
+/*
   marker.on('dragend', function(event) {
     var position = marker.getLatLng();
     var zoom = map.getZoom();
@@ -90,7 +179,7 @@ jQuery( document ).ready(function() {
   map.addLayer(marker);
 
 
-
+  */
 
 
 });

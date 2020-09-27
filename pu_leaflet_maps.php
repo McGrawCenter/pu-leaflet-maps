@@ -56,6 +56,48 @@ function puleaf_admin_scripts()
 
   wp_register_script('puleaf', plugins_url('/js/admin.js', __FILE__), array('jquery'),'1.1', true);
   wp_enqueue_script('puleaf');
+  
+  wp_register_style('leaflet-draw-css', plugins_url('js/leafletDraw/leaflet.draw.css',__FILE__ ));
+  wp_enqueue_style('leaflet-draw-css');
+  
+  
+  $includes = array(
+	"Leaflet.draw.js",
+	"Leaflet.Draw.Event.js",
+	"Toolbar.js",
+	"Tooltip.js",
+	"ext/GeometryUtil.js",
+	"ext/LatLngUtil.js",
+	"ext/LineUtil.Intersect.js",
+	"ext/Polygon.Intersect.js",
+	"ext/Polyline.Intersect.js",
+	"ext/TouchEvents.js",
+	"draw/DrawToolbar.js",
+	"draw/handler/Draw.Feature.js",
+	"draw/handler/Draw.SimpleShape.js",
+	"draw/handler/Draw.Polyline.js",
+	"draw/handler/Draw.Marker.js",
+	"draw/handler/Draw.Circle.js",
+	"draw/handler/Draw.CircleMarker.js",
+	"draw/handler/Draw.Polygon.js",
+	"draw/handler/Draw.Rectangle.js",
+	"edit/EditToolbar.js",
+	"edit/handler/EditToolbar.Edit.js",
+	"edit/handler/EditToolbar.Delete.js",
+	"Control.Draw.js",
+	"edit/handler/Edit.Poly.js",
+	"edit/handler/Edit.SimpleShape.js",
+	"edit/handler/Edit.Rectangle.js",
+	"edit/handler/Edit.Marker.js",
+	"edit/handler/Edit.CircleMarker.js",
+	"edit/handler/Edit.Circle.js"
+  );
+  foreach($includes as $filename) {
+    $slug = str_replace(".","_",$filename);
+    wp_register_script( $slug , plugins_url("js/leafletDraw/".$filename, __FILE__  ), array('jquery'),'1.1', true);
+    wp_enqueue_script( $slug );
+  }
+  
 
   $screen = get_current_screen();
 
@@ -81,10 +123,8 @@ add_action( 'admin_enqueue_scripts', 'puleaf_admin_scripts' );
 ************************************/
 function defaultMapObj() {
   $data = array(
-  "lat" => 40.3461,
-  "lng" => -74.65304,
   "zoom" => 5,
-  "title" => '');
+  "geojson" => '[]');
   return $data;
 }
 
@@ -111,37 +151,26 @@ function puleaf_map_editor_metabox() {
 
 global $post;
 
-
 if($data = get_post_meta($post->ID, '_puleafletmap', true)) {
   $data = json_decode($data);
 }
 else {
   $data = new StdClass();
-  $data->lat = "40.3461";
-  $data->lng = "-74.65304";
+  $data->geojson = $data->geoJson;
   $data->zoom = 5;
-  $data->savezoom = 0;
-  $data->title = "";
 }
 
 ?>
-   <div id="MapLocation" style='width:100%; height:350px;background:grey;'></div>
-   <div id="PU-Leaflet-WP-Form">
-      <label for="Latitude">Latitude:</label><input type="text" class='coordinates' id="Latitude" placeholder="Latitude" name="Location.Latitude" value='<?php echo $data->lat; ?>'  />
-      <label for="Longitude">Longitude:</label><input type="text" class='coordinates' id="Longitude" placeholder="Longitude" name="Location.Longitude" value='<?php echo $data->lng; ?>'  /><br />
-<?php
-  if($data->savezoom) { $checked = "checked='checked'"; } else { $checked = ""; }
-?>
-   
+   <div id="MapLocation" style='width:100%;height:370px;background:grey;'></div>
 
-   <input type='hidden' id="Zoom" name='Location.ZoomLevel' value='<?php echo $data->zoom; ?>' />
-    <label for="markertitle">Marker title (optional):</label><input type='text' id="markertitle" name='Location.Title' value='<?php echo $data->title; ?>' /> 
+   <input type='hidden' id="Zoom" name='Leaflet.Zoom' value='<?php echo $data->zoom; ?>' />
+   <input type='hidden' id="GeoJSON" name='Leaflet.GeoJSON' value='<?php echo $data->geoJson; ?>'/>
+   
+   
    <input type='button' class='puleaf-clear' value='Clear Location'/> 
    <input type='button' class='puleaf-center' value='Center Map'/>
 
-   <!--<input type='checkbox' name='Location.CustomZoom' id='zoomcheckbox' value='1' <?php echo $checked; ?>/> Save zoom level--> 
 
-   </div>
 <?php
 }
 
@@ -155,15 +184,13 @@ function puleaf_save_postdata($post_id)
 {
 
   if($_POST) {
+  
     $post_id = $_POST['ID'];
-    if ( array_key_exists('Location_Latitude', $_POST) && array_key_exists('Location_Longitude', $_POST) ) {
+    if ( array_key_exists('Leaflet_Zoom', $_POST) && array_key_exists('Leaflet_GeoJSON', $_POST) ) {
     
         $puleaf_info = array(
-        	"lat"=>$_POST['Location_Latitude'],
-        	"lng"=>$_POST['Location_Longitude'],
-        	"zoom"=>$_POST['Location_ZoomLevel'],
-        	"savezoom"=>$_POST['Location_CustomZoom'],
-        	"title"=>$_POST['Location_Title']
+        	"geoJson"=>$_POST['Leaflet_GeoJSON'],
+        	"zoom"=>$_POST['Leaflet_Zoom']
         );
 
         update_post_meta( $post_id, '_puleafletmap', json_encode($puleaf_info) );
@@ -249,4 +276,18 @@ function markers_json( $atts ){
 }
 add_action( 'init', 'markers_json' );
 
+
+/******************************************
+* 
+******************************************/
+
+add_action( 'admin_footer', 'leaflet_draw_javascript_includes' ); 
+
+function leaflet_draw_javascript_includes() {
+
+?>
+
+
+<?php
+}
 
