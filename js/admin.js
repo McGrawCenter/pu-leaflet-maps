@@ -1,62 +1,40 @@
 jQuery( document ).ready(function() {
 
 
-
-
-function createLayersFromJson(geojson) {
-  const layers = [];
-  
-  jQuery.each(geojson.features, function(i,geo){
-  	    //console.log(geo);
-  	    var l = L.geoJSON(geo)
-  	    console.log(l);
-  	    /*
-	    L.geoJSON(geo, {
-	      pointToLayer: (feature, latlng) => {
-		if (feature.properties.radius) {
-		  return new L.Circle(latlng, feature.properties.radius);
-		} else {
-		  return new L.Marker(latlng);
-		}
-	      },
-	      onEachFeature: (feature, layer) => {
-		layers.push(layer);
-	      },
-	    });
-	    */
-  });
-  return layers;
-};
-
-
-
-
-function testing(geojson) {
-  const layers = [];
-  L.geoJSON(geojson, {
-	      pointToLayer: (feature, latlng) => {
-		if (feature.properties.radius) {
-		  return new L.Circle(latlng, feature.properties.radius);
-		} else {
-		  return new L.Marker(latlng);
-		}
-	      },
-	      onEachFeature: (feature, layer) => {
-		layers.push(layer);
-	      }
-  });
- return layers;
-}
-
-    
-  // tile layers
+  // possible tile layers
   //http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}
   //http://www.google.cn/maps/vt?lyrs=m&x={x}&y={y}&z={z}
   //http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}
   //https://{s}.tile.osm.org/{z}/{x}/{y}.png
- 
-  
-  
+
+
+	/*******************************
+	* geojson doesn't support circles. Process the geojson to deal with this
+	*******************************/
+
+	function geojsonToLayers(geojson) {
+	  const layers = [];
+	  L.geoJSON(geojson, {
+		      pointToLayer: (feature, latlng) => {
+			if (feature.properties.radius) {
+			  return new L.Circle(latlng, feature.properties.radius);
+			} else {
+			  return new L.Marker(latlng);
+			}
+		      },
+		      onEachFeature: (feature, layer) => {
+			layers.push(layer);
+		      }
+	  });
+	 return layers;
+	}
+
+    
+
+ 	/*******************************
+	* set up the map
+	*******************************/
+
 	var home_coords = [39.952718, -75.164093 ];
 	var zoom = 13;
 
@@ -69,28 +47,37 @@ function testing(geojson) {
 
  	map.attributionControl.setPrefix(false);     
  	
- 	
+	/*******************************
+	* if there is data from WP meta, create a featuregroup
+	*******************************/
 	if(vars.mapdata.geojson == "") {
 	  var mylayer = new L.FeatureGroup();
 	}
 	else {
 	  var geojson = JSON.parse(vars.mapdata.geojson);
-	  var t = testing(geojson);
+	  var t = geojsonToLayers(geojson);
 	  var mylayer = L.featureGroup(t).addTo(map);
 	  map.fitBounds(mylayer.getBounds());
 	}
  	 
       
+	/*******************************
+	* create and add the drawing controls
+	*******************************/      
        
-     var drawControl = new L.Control.Draw({
-	 edit: {
+ 	var drawControl = new L.Control.Draw({
+	  edit: {
 	     featureGroup: mylayer
-	 }
-     });
+	  }
+	});
      
-     map.addControl(drawControl);
+        map.addControl(drawControl);
      
-     
+
+
+	/*******************************
+	* add radius for circles as a property of the geojson
+	*******************************/
 	function addRadius(geojson,radius){
 	 var index = geojson.features.length - 1;
 	 geojson.features[index].properties.radius = radius;
@@ -98,37 +85,45 @@ function testing(geojson) {
 	}      
      
 
-
+	/*******************************
+	* Leaflet draw control events
+	*******************************/
 	map.on('draw:created', function (e) {
 	  var type = e.layerType,
 	  layer = e.layer;
 
 	  mylayer.addLayer(layer);
 	  var geojson = mylayer.toGeoJSON();
+	  
 
- 	  if(type == 'circle' || type == 'circlemarker') {
-	    geojson = addRadius(geojson,layer._mRadius);
+ 	  if(type == 'circle') {
+ 	    var radius = layer._mRadius;
+	    geojson = addRadius(geojson,radius);
 	  }
+ 	  if(type == 'circlemarker') {
+ 	    var radius = 5;
+	    geojson = addRadius(geojson,radius);
+	  }	  
 
 	  jQuery('#GeoJSON').val(JSON.stringify(geojson));
 	});
 
 
-  map.on('draw:edited', function (e) {
-    var type = e.layerType,
-        layer = e.layer;
-    mylayer.removeLayer(layer);
-    var geojson = mylayer.toGeoJSON();
-    jQuery('#GeoJSON').val(JSON.stringify(geojson));
-  });
+	map.on('draw:edited', function (e) {
+	   var type = e.layerType,
+	   layer = e.layer;
+	   mylayer.removeLayer(layer);
+	   var geojson = mylayer.toGeoJSON();
+	   jQuery('#GeoJSON').val(JSON.stringify(geojson));
+	});
 
-  map.on('draw:deleted', function (e) {
-    var type = e.layerType,
-        layer = e.layer;
-    mylayer.removeLayer(layer);
-    var geojson = mylayer.toGeoJSON();
-    jQuery('#GeoJSON').val(JSON.stringify(geojson));
-  });
+	map.on('draw:deleted', function (e) {
+	   var type = e.layerType,
+	   layer = e.layer;
+	   mylayer.removeLayer(layer);
+	   var geojson = mylayer.toGeoJSON();
+	   jQuery('#GeoJSON').val(JSON.stringify(geojson));
+	});
   
 
 
