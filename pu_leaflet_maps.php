@@ -41,92 +41,85 @@ add_action( 'wp_enqueue_scripts', 'puleaf_scripts' );
 
 
 
-function puleaf_admin_scripts()
+function puleaf_admin_scripts( $hook )
 {
   global $post;
-
-  wp_register_script('leaflet-js', plugins_url('/js/leaflet.js', __FILE__), array('jquery'),'1.1', true);
-  wp_enqueue_script('leaflet-js');
-
-  wp_register_style('leaflet-css', plugins_url('css/leaflet.css',__FILE__ ));
-  wp_enqueue_style('leaflet-css');
-
-  wp_register_style('puleaf-css', plugins_url('css/style.css',__FILE__ ));
-  wp_enqueue_style('puleaf-css');
-
-  wp_register_script('puleaf', plugins_url('/js/admin.js', __FILE__), array('jquery'),'1.1', true);
-  wp_enqueue_script('puleaf');
   
-  wp_register_style('leaflet-draw-css', plugins_url('js/leafletDraw/leaflet.draw.css',__FILE__ ));
-  wp_enqueue_style('leaflet-draw-css');
-  
-  
-  $includes = array(
-	"Leaflet.draw.js",
-	"Leaflet.Draw.Event.js",
-	"Toolbar.js",
-	"Tooltip.js",
-	"ext/GeometryUtil.js",
-	"ext/LatLngUtil.js",
-	"ext/LineUtil.Intersect.js",
-	"ext/Polygon.Intersect.js",
-	"ext/Polyline.Intersect.js",
-	"ext/TouchEvents.js",
-	"draw/DrawToolbar.js",
-	"draw/handler/Draw.Feature.js",
-	"draw/handler/Draw.SimpleShape.js",
-	"draw/handler/Draw.Polyline.js",
-	"draw/handler/Draw.Marker.js",
-	"draw/handler/Draw.Circle.js",
-	"draw/handler/Draw.CircleMarker.js",
-	"draw/handler/Draw.Polygon.js",
-	"draw/handler/Draw.Rectangle.js",
-	"edit/EditToolbar.js",
-	"edit/handler/EditToolbar.Edit.js",
-	"edit/handler/EditToolbar.Delete.js",
-	"Control.Draw.js",
-	"edit/handler/Edit.Poly.js",
-	"edit/handler/Edit.SimpleShape.js",
-	"edit/handler/Edit.Rectangle.js",
-	"edit/handler/Edit.Marker.js",
-	"edit/handler/Edit.CircleMarker.js",
-	"edit/handler/Edit.Circle.js"
-  );
-  foreach($includes as $filename) {
-    $slug = str_replace(".","_",$filename);
-    wp_register_script( $slug , plugins_url("js/leafletDraw/".$filename, __FILE__  ), array('jquery'),'1.1', true);
-    wp_enqueue_script( $slug );
-  }
-  
+  if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
 
-  $screen = get_current_screen();
+	  wp_register_script('leaflet-js', plugins_url('/js/leaflet.js', __FILE__), array('jquery'),'1.1', true);
+	  wp_enqueue_script('leaflet-js');
 
-  if( $screen->post_type == 'page' || $screen->post_type == 'post'){
+	  wp_register_style('leaflet-css', plugins_url('css/leaflet.css',__FILE__ ));
+	  wp_enqueue_style('leaflet-css');
 
-    global $post;
+	  wp_register_style('puleaf-css', plugins_url('css/style.css',__FILE__ ));
+	  wp_enqueue_style('puleaf-css');
 
-    if(!$puleafletmapdata =  json_decode(get_post_meta($post->ID, '_puleafletmap', true))) {
-      $puleafletmapdata = defaultMapObj();
-    }
-    $d = array('plugin_url' => plugin_dir_url( __FILE__ ), 'mapdata' => $puleafletmapdata);
-    wp_localize_script( 'puleaf', 'vars', $d);
-  }
+	  wp_register_script('puleaf', plugins_url('/js/admin.js', __FILE__), array('jquery'),'1.1', true);
+	  wp_enqueue_script('puleaf');
+	  
+	  wp_register_style('leaflet-draw-css', plugins_url('js/leafletDraw/leaflet.draw.css',__FILE__ ));
+	  wp_enqueue_style('leaflet-draw-css');
+	  
+	  
+	  $includes = array(
+		"Leaflet.draw.js",
+		"Leaflet.Draw.Event.js",
+		"Toolbar.js",
+		"Tooltip.js",
+		"ext/GeometryUtil.js",
+		"ext/LatLngUtil.js",
+		"ext/LineUtil.Intersect.js",
+		"ext/Polygon.Intersect.js",
+		"ext/Polyline.Intersect.js",
+		"ext/TouchEvents.js",
+		"draw/DrawToolbar.js",
+		"draw/handler/Draw.Feature.js",
+		"draw/handler/Draw.SimpleShape.js",
+		"draw/handler/Draw.Polyline.js",
+		"draw/handler/Draw.Marker.js",
+		"draw/handler/Draw.Circle.js",
+		"draw/handler/Draw.CircleMarker.js",
+		"draw/handler/Draw.Polygon.js",
+		"draw/handler/Draw.Rectangle.js",
+		"edit/EditToolbar.js",
+		"edit/handler/EditToolbar.Edit.js",
+		"edit/handler/EditToolbar.Delete.js",
+		"Control.Draw.js",
+		"edit/handler/Edit.Poly.js",
+		"edit/handler/Edit.SimpleShape.js",
+		"edit/handler/Edit.Rectangle.js",
+		"edit/handler/Edit.Marker.js",
+		"edit/handler/Edit.CircleMarker.js",
+		"edit/handler/Edit.Circle.js"
+	  );
+	  foreach($includes as $filename) {
+	    $slug = str_replace(".","_",$filename);
+	    wp_register_script( $slug , plugins_url("js/leafletDraw/".$filename, __FILE__  ), array('jquery'),'1.1', true);
+	    wp_enqueue_script( $slug );
+	  }
+	  
+
+	  $screen = get_current_screen();
+
+	  if( $screen->post_type == 'page' || $screen->post_type == 'post'){
+
+	    global $post;
+	   //delete_post_meta($post->ID, '_puleafletmap'); //GeoJSON
+	    if(!$puleafletmapdata =  json_decode(get_post_meta($post->ID, '_puleafletmap', true))) {
+	      $puleafletmapdata = array('zoom'=>5,'geojson'=>'');
+	    }
+
+	    $d = array('plugin_url' => plugin_dir_url( __FILE__ ), 'mapdata' => $puleafletmapdata);
+	    wp_localize_script( 'puleaf', 'vars', $d);
+	  }
+   } // if hook is edit-post
 }
 add_action( 'admin_enqueue_scripts', 'puleaf_admin_scripts' ); 
 
 
 
-
-
-/************************************
-* Initial, default map object
-************************************/
-function defaultMapObj() {
-  $data = array(
-  "zoom" => 5,
-  "geojson" => '[]');
-  return $data;
-}
 
 
 
@@ -156,7 +149,7 @@ if($data = get_post_meta($post->ID, '_puleafletmap', true)) {
 }
 else {
   $data = new StdClass();
-  $data->geojson = $data->geoJson;
+  $data->geojson = "";
   $data->zoom = 5;
 }
 
@@ -164,11 +157,13 @@ else {
    <div id="MapLocation" style='width:100%;height:370px;background:grey;'></div>
 
    <input type='hidden' id="Zoom" name='Leaflet.Zoom' value='<?php echo $data->zoom; ?>' />
-   <input type='hidden' id="GeoJSON" name='Leaflet.GeoJSON' value='<?php echo $data->geoJson; ?>'/>
-   
+   <!--<input type='text' id="GeoJSON" name='Leaflet.GeoJSON' value='<?php echo $data->geojson; ?>'/>-->
+
    
    <input type='button' class='puleaf-clear' value='Clear Location'/> 
    <input type='button' class='puleaf-center' value='Center Map'/>
+   <br />
+      <textarea type='text' id="GeoJSON" name='Leaflet.GeoJSON' style='width:100%;height:300px;'><?php echo $data->geojson; ?></textarea>
 
 
 <?php
@@ -186,13 +181,13 @@ function puleaf_save_postdata($post_id)
   if($_POST) {
   
     $post_id = $_POST['ID'];
+
     if ( array_key_exists('Leaflet_Zoom', $_POST) && array_key_exists('Leaflet_GeoJSON', $_POST) ) {
     
         $puleaf_info = array(
-        	"geoJson"=>$_POST['Leaflet_GeoJSON'],
+        	"geojson"=>$_POST['Leaflet_GeoJSON'],
         	"zoom"=>$_POST['Leaflet_Zoom']
         );
-
         update_post_meta( $post_id, '_puleafletmap', json_encode($puleaf_info) );
 
     }
