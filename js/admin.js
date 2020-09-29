@@ -3,38 +3,55 @@ jQuery( document ).ready(function() {
 
 
 
-function createLayersFromJson(data) {
+function createLayersFromJson(geojson) {
   const layers = [];
   
-  jQuery.each(data, function(geo,id){
-    L.geoJSON(geo, {
-      pointToLayer: (feature, latlng) => {
-        if (feature.properties.radius) {
-          return new L.Circle(latlng, feature.properties.radius);
-        } else {
-          return new L.Marker(latlng);
-        }
-      },
-      onEachFeature: (feature, layer) => {
-        layer.push(layer);
-      },
-    });
+  jQuery.each(geojson.features, function(i,geo){
+  	    //console.log(geo);
+  	    var l = L.geoJSON(geo)
+  	    console.log(l);
+  	    /*
+	    L.geoJSON(geo, {
+	      pointToLayer: (feature, latlng) => {
+		if (feature.properties.radius) {
+		  return new L.Circle(latlng, feature.properties.radius);
+		} else {
+		  return new L.Marker(latlng);
+		}
+	      },
+	      onEachFeature: (feature, layer) => {
+		layers.push(layer);
+	      },
+	    });
+	    */
   });
-  
   return layers;
 };
 
 
 
 
-
-
-
-
-
+function testing(geojson) {
+  const layers = [];
+  L.geoJSON(geojson, {
+	      pointToLayer: (feature, latlng) => {
+		if (feature.properties.radius) {
+		  return new L.Circle(latlng, feature.properties.radius);
+		} else {
+		  return new L.Marker(latlng);
+		}
+	      },
+	      onEachFeature: (feature, layer) => {
+		layers.push(layer);
+	      }
+  });
+ return layers;
+}
 
     
   // tile layers
+  //http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}
+  //http://www.google.cn/maps/vt?lyrs=m&x={x}&y={y}&z={z}
   //http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}
   //https://{s}.tile.osm.org/{z}/{x}/{y}.png
  
@@ -43,28 +60,26 @@ function createLayersFromJson(data) {
 	var home_coords = [39.952718, -75.164093 ];
 	var zoom = 13;
 
-	var map = L.map('MapLocation').setView(home_coords, zoom);
+	
+	var map = L.map('MapLocation', { center: [39.73, -104.99], zoom: 10});
 
-	L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
+	L.tileLayer('http://www.google.cn/maps/vt?lyrs=m&x={x}&y={y}&z={z}', {
 	attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 	}).addTo(map);
 
-	map.attributionControl.setPrefix(false);
-
+ 	map.attributionControl.setPrefix(false);     
+ 	
+ 	
 	if(vars.mapdata.geojson == "") {
 	  var mylayer = new L.FeatureGroup();
 	}
 	else {
-	  //var geojson = JSON.parse(vars.mapdata.geojson);
-	  //console.log(geojson);
-	  //var featureLayer = createLayersFromJson(geojson);
-	  var featureLayer = JSON.parse(vars.mapdata.geojson);
-	  var mylayer = L.geoJSON(featureLayer).addTo(map);
-	  //featureLayer.addTo(map);
+	  var geojson = JSON.parse(vars.mapdata.geojson);
+	  var t = testing(geojson);
+	  var mylayer = L.featureGroup(t).addTo(map);
 	  map.fitBounds(mylayer.getBounds());
 	}
-
-       
+ 	 
       
        
      var drawControl = new L.Control.Draw({
@@ -90,11 +105,11 @@ function createLayersFromJson(data) {
 
 	  mylayer.addLayer(layer);
 	  var geojson = mylayer.toGeoJSON();
-	  /*
+
  	  if(type == 'circle' || type == 'circlemarker') {
 	    geojson = addRadius(geojson,layer._mRadius);
 	  }
-	  */
+
 	  jQuery('#GeoJSON').val(JSON.stringify(geojson));
 	});
 
