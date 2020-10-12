@@ -6,6 +6,9 @@ jQuery( document ).ready(function() {
   //http://www.google.cn/maps/vt?lyrs=m&x={x}&y={y}&z={z}
   //http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}
   //https://{s}.tile.osm.org/{z}/{x}/{y}.png
+  
+  
+        var mylayer;
 
 
 	/*******************************
@@ -29,7 +32,6 @@ jQuery( document ).ready(function() {
 	 return layers;
 	}
 
-    
 
  	/*******************************
 	* set up the map
@@ -53,11 +55,13 @@ jQuery( document ).ready(function() {
 	var geojson = JSON.parse(vars.mapdata.geojson);
 	
 	if(geojson.features.length  < 1) {
-	  var mylayer = new L.FeatureGroup();
+	  mylayer = new L.FeatureGroup();
 	}
 	else {
+	  var geojson = JSON.parse(vars.mapdata.geojson);
+	  console.log(geojson);
 	  var t = geojsonToLayers(geojson);
-	  var mylayer = L.featureGroup(t).addTo(map);
+	  mylayer = L.featureGroup(t).addTo(map);
 	  map.fitBounds(mylayer.getBounds());
 	}
  	 
@@ -92,6 +96,7 @@ jQuery( document ).ready(function() {
 	map.on('draw:created', function (e) {
 	  var type = e.layerType,
 	  layer = e.layer;
+
 
 	  mylayer.addLayer(layer);
 	  var geojson = mylayer.toGeoJSON();

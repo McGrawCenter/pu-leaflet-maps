@@ -214,7 +214,8 @@ function puleaf_content_filter($content) {
   if ($data = json_decode(get_post_meta($post->ID,'_puleafletmap', true))) {
     
     $html = "<div id='{$rand}map' style='width:100%; height:350px;background:grey;margin:20px 0px'></div>";
-    $html .= "<script>jQuery( document ).ready(function() { var coordinates = [{$data->lat},{$data->lng}];doLeaflet('{$rand}map',coordinates,'{$data->zoom}','{$data->title}'); });</script>";
+    $html .= "<script>jQuery( document ).ready(function() { doLeaflet('{$rand}map',{$data->geojson},'{$data->zoom}'); });</script>";
+
 
     return $html.$content;
   }

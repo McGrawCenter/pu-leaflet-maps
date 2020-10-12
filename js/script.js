@@ -1,22 +1,43 @@
+	/*******************************
+	* geojson doesn't support circles. Process the geojson to deal with this
+	*******************************/
 
- function doLeaflet(map_id, coordinate_arr, zoom, title) {
+	function geojsonToLayers(geojson) {
+	  const layers = [];
+	  L.geoJSON(geojson, {
+		      pointToLayer: (feature, latlng) => {
+			if (feature.properties.radius) {
+			  return new L.Circle(latlng, feature.properties.radius);
+			} else {
+			  return new L.Marker(latlng);
+			}
+		      },
+		      onEachFeature: (feature, layer) => {
+			layers.push(layer);
+		      }
+	  });
+	 return layers;
+	}
+
+
+
+
+ function doLeaflet(map_id, geojson, zoom) {
  
-
- 	  console.log(coordinate_arr);
-
-	  var map = L.map(map_id).setView(coordinate_arr, zoom);
+	  //var map = L.map('MapLocation', { center: [39.73, -104.99], zoom: 10});
+	  var map = L.map(map_id, { center: [39.73, -104.99], zoom: 10})
 
 	  L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 	    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 	  }).addTo(map);
 
 	  map.attributionControl.setPrefix(false);
-
-	  var marker = new L.marker(coordinate_arr, {}).bindPopup("<b style='margin-bottom:10px;'>"+title+"</b>");
-	  map.addLayer(marker);
+	  var t = geojsonToLayers(geojson);
+	  console.log(t);
+	  var mylayer = L.featureGroup(t).addTo(map);
+	  map.fitBounds(mylayer.getBounds());
+	  
  }
-
-
 
 
 
