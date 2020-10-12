@@ -1,8 +1,8 @@
 <?php 
     /*
-    Plugin Name: PU Leaflet Maps
+    Plugin Name: PU Leaflet Maps Advanced
     Plugin URI: http://www.princeton.edu
-    Description: Add Leaflet maps to posts
+    Description: Add Leaflet maps to pages and posts with markers, lines, rectangles, circles, etc.
     Author: Ben Johnston - benj@princeton.edu
     Version: 1.0
     */

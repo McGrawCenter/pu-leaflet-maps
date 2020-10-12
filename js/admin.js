@@ -50,11 +50,12 @@ jQuery( document ).ready(function() {
 	/*******************************
 	* if there is data from WP meta, create a featuregroup
 	*******************************/
-	if(vars.mapdata.geojson == "") {
+	var geojson = JSON.parse(vars.mapdata.geojson);
+	
+	if(geojson.features.length  < 1) {
 	  var mylayer = new L.FeatureGroup();
 	}
 	else {
-	  var geojson = JSON.parse(vars.mapdata.geojson);
 	  var t = geojsonToLayers(geojson);
 	  var mylayer = L.featureGroup(t).addTo(map);
 	  map.fitBounds(mylayer.getBounds());
