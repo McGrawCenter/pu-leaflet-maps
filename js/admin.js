@@ -19,9 +19,13 @@ jQuery( document ).ready(function() {
 	  const layers = [];
 	  L.geoJSON(geojson, {
 		      pointToLayer: (feature, latlng) => {
-			if (feature.properties.radius) {
+		      	if (feature.properties.radius && feature.properties.radius == 10) {
+			  return new L.CircleMarker(latlng, feature.properties.radius);
+			} 
+			else if (feature.properties.radius) {
 			  return new L.Circle(latlng, feature.properties.radius);
-			} else {
+			} 
+			else {
 			  return new L.Marker(latlng);
 			}
 		      },
@@ -52,15 +56,17 @@ jQuery( document ).ready(function() {
 	/*******************************
 	* if there is data from WP meta, create a featuregroup
 	*******************************/
+
 	var geojson = JSON.parse(vars.mapdata.geojson);
 	
 	if(geojson.features.length  < 1) {
-	  mylayer = new L.FeatureGroup();
+	  mylayer = new L.FeatureGroup().addTo(map);
 	}
 	else {
 	  var geojson = JSON.parse(vars.mapdata.geojson);
-	  console.log(geojson);
+
 	  var t = geojsonToLayers(geojson);
+
 	  mylayer = L.featureGroup(t).addTo(map);
 	  map.fitBounds(mylayer.getBounds());
 	}
@@ -97,19 +103,18 @@ jQuery( document ).ready(function() {
 	  var type = e.layerType,
 	  layer = e.layer;
 
-
 	  mylayer.addLayer(layer);
+	  console.log(mylayer);
 	  var geojson = mylayer.toGeoJSON();
-	  
 
  	  if(type == 'circle') {
  	    var radius = layer._mRadius;
 	    geojson = addRadius(geojson,radius);
 	  }
  	  if(type == 'circlemarker') {
- 	    var radius = 5;
+ 	    var radius = 10;
 	    geojson = addRadius(geojson,radius);
-	  }	  
+	  }
 
 	  jQuery('#GeoJSON').val(JSON.stringify(geojson));
 	});
